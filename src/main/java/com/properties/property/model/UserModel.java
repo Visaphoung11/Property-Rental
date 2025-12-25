@@ -1,8 +1,9 @@
 package com.properties.property.model;
+
 import java.util.Collection;
-import java.util.List;
-
-
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,6 +15,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "users") // Explicitly mapping to your 'user' table
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,62 +23,56 @@ import lombok.*;
 @Builder
 public class UserModel implements UserDetails {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
-    private String name;
+    @Column(name = "full_name")
+    private String fullName;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
     private String phone;
-    private String password;
-
-    @ManyToOne
-    @JoinColumn(name = "role_id", nullable = false)
+    
     @JsonIgnore
-    private Role role;
+    private String password;
+    
+    private String gender;
+    private String status; // e.g., "ACTIVE", "INACTIVE"
 
-    private String roleName;
+    // Many-to-Many relationship with the 'role' table via 'user_role' join table
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_role",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
 
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(roleName));
+        return roles.stream()
+                .map(role -> {
+                    // 1. role.getName() returns the 'enums' object
+                    // 2. .name() converts the Enum to a String (e.g., "AGENT")
+                    // 3. .toUpperCase() ensures it's in the correct format
+                    String roleString = role.getName().name().toUpperCase();
+                    return new SimpleGrantedAuthority("ROLE_" + roleString);
+                })
+                .collect(Collectors.toList());
     }
-
     @Override
-    @JsonIgnore
     public String getUsername() {
         return this.email;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-    @Override
-    @JsonIgnore
-    public String getPassword() {
-        return this.password;
-    }
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return true; }
 }

@@ -7,7 +7,7 @@ import com.properties.property.model.UserModel;
 
 
 @Repository
-public interface UserReposiitory extends JpaRepository<UserModel, Integer> {
+public interface UserReposiitory extends JpaRepository<UserModel, Long> {
     UserModel findByEmail(String email);
 
 }

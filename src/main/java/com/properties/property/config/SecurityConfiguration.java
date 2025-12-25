@@ -3,6 +3,7 @@ package com.properties.property.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -15,6 +16,7 @@ import com.properties.property.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
+@EnableMethodSecurity // <--- Add this to enable @PreAuthorize
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfiguration {
@@ -25,20 +27,27 @@ public class SecurityConfiguration {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-                http.csrf(AbstractHttpConfigurer::disable)
-                                .authorizeHttpRequests(request -> request
-                                                .requestMatchers(
-                                                                "/api/v1/auth-service/**",
-                                                                "/instances")
-                                                .permitAll()
-                                                .anyRequest().authenticated())
+            http.csrf(AbstractHttpConfigurer::disable)
+                    .authorizeHttpRequests(request -> request
+                            // 1. SPECIFIC Public Endpoints (No wildcards for sensitive areas)
+                            .requestMatchers(
+                                "/api/v1/auth-service/register", 
+                                "/api/v1/auth-service/authenticate",
+                                "/instances"
+                            ).permitAll()
+                            .requestMatchers("/api/v1/properties/**").authenticated()
+                            // 2. SPECIFIC Protected Endpoints
+                            .requestMatchers("/api/v1/auth-service/assign-role").authenticated()
 
-                                .sessionManagement(manager -> manager
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                                .authenticationProvider(authenticationProvider)
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                            // 3. Catch-all for everything else
+                            .anyRequest().authenticated())
 
-                return http.build();
+                    .sessionManagement(manager -> manager
+                            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authenticationProvider(authenticationProvider)
+                    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+            return http.build();
         }
 
 }

@@ -12,24 +12,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 @Entity
-@Table(name = "roles")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Table(name = "role")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Role {
-@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int roleId;
+    private Long id;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)
-    private enums role;
-    @Column(nullable = false)
+    private enums name; // This field name determines the getter: getRole()
+
     private String description;
-    @CreationTimestamp
-    @Column(updatable = false, name = "created_at")
-    private LocalDateTime createdAt;
-    @UpdateTimestamp
-    @Column(name = "update_at")
-    private LocalDateTime update_at;
 }

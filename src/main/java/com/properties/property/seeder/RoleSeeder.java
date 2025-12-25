@@ -1,4 +1,5 @@
 package com.properties.property.seeder;
+
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
@@ -8,30 +9,42 @@ import com.properties.property.model.Role;
 import com.properties.property.repository.RoleRepository;
 
 import java.util.*;
+
 @Component
 public class RoleSeeder implements ApplicationListener<ContextRefreshedEvent> {
     private final RoleRepository roleRepository;
+
     public RoleSeeder(RoleRepository roleRepository) {
         this.roleRepository = roleRepository;
     }
+
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
         this.loadRoles();
     }
+
     private void loadRoles() {
-        enums[] roleNames = new enums[] { enums.ADMIN,
-                enums.User };
+        // 1. Define all roles including AGENT
+        enums[] roleNames = new enums[] { enums.ADMIN, enums.USER, enums.AGENT };
+        
         Map<enums, String> roleDescriptionMap = Map.of(
-                enums.ADMIN, "Administrator role",
-                enums.User, "user role");
+                enums.ADMIN, "Administrator role with full access",
+                enums.USER, "Standard user role for browsing",
+                enums.AGENT, "Agent role for listing properties"
+        );
+
         Arrays.stream(roleNames).forEach((roleName) -> {
-            Optional<Role> optionalRole = Optional.ofNullable(roleRepository.findByRole(roleName));
-            optionalRole.ifPresentOrElse(System.out::println, () -> {
+            // 2. Use findByName (matching our earlier Role entity change)
+        	Optional<Role> optionalRole = Optional.ofNullable(roleRepository.findByName(roleName));
+            if (optionalRole.isEmpty()) {
                 Role roleToCreate = new Role();
-                roleToCreate.setRole(roleName);
+                roleToCreate.setName(roleName); // Use setName() 
                 roleToCreate.setDescription(roleDescriptionMap.get(roleName));
                 roleRepository.save(roleToCreate);
-            });
+                System.out.println("Seeded role: " + roleName);
+            } else {
+                System.out.println("Role already exists: " + roleName);
+            }
         });
     }
 }

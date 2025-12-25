@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.properties.property.apiResponse.ApiResponse;
 import com.properties.property.dto.AuthenticationRequest;
 import com.properties.property.dto.RegisterUserDto;
+import com.properties.property.dto.RoleAssignmentRequest;
 import com.properties.property.model.UserModel;
 import com.properties.property.repository.UserReposiitory;
 import com.properties.property.service.AuthenticationService;
@@ -28,29 +29,51 @@ public class AuthenticationController {
     }
 
     @SuppressWarnings("rawtypes")
-	@PostMapping("/register")
-    public ResponseEntity<ApiResponse> postMethodName(@RequestBody RegisterUserDto registerTeacherDto) {
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse> postMethodName(@RequestBody RegisterUserDto registerDto) {
         try {
-            UserModel userModel = userReposiitory.findByEmail(registerTeacherDto.getEmail());
-            System.out.println(
-                    "Resandmdnfjjsxbasjkjdbascx cdx kjnbacksc jscbd dazx c b cxbz :" + registerTeacherDto.getName()
-                            + registerTeacherDto.getRole());
+            UserModel userModel = userReposiitory.findByEmail(registerDto.getEmail());
+            
             if (userModel == null) {
-                authenticationService.register(registerTeacherDto);
-                ApiResponse apiResponse = ApiResponse.builder().message("User registered successfully!")
-                        .statusCode(HttpStatus.OK.value()).build();
-                return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+                authenticationService.register(registerDto);
+                
+                ApiResponse apiResponse = ApiResponse.builder()
+                        .message("User registered successfully!")
+                        .statusCode(HttpStatus.CREATED.value()) // Use 201
+                        .build();
+                        
+                return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
             } else {
-                ApiResponse apiResponse = ApiResponse.builder().message("User with email already exist")
-                        .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+                // A duplicate email is a Conflict (409), not a Server Error (500)
+                ApiResponse apiResponse = ApiResponse.builder()
+                        .message("User with email already exists")
+                        .statusCode(HttpStatus.CONFLICT.value())
+                        .build();
+                        
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(apiResponse);
             }
 
         } catch (Exception ex) {
-            ApiResponse apiResponse = ApiResponse.builder().message("Failed: " + ex.getMessage())
-                    .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value()).build();
+            ApiResponse apiResponse = ApiResponse.builder()
+                    .message("Failed: " + ex.getMessage())
+                    .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .build();
+                    
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-
+        }
+    }
+    @PostMapping("/assign-role")
+    public ResponseEntity<ApiResponse<UserModel>> assignRole(@RequestBody RoleAssignmentRequest request) {
+        try {
+            ApiResponse<UserModel> response = authenticationService.assignRoleToUser(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            // Return a parameterized ApiResponse even in case of error
+            ApiResponse<UserModel> errorResponse = ApiResponse.<UserModel>builder()
+                    .message("Failed: " + ex.getMessage())
+                    .statusCode(HttpStatus.BAD_REQUEST.value())
+                    .build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
 
