@@ -1,20 +1,27 @@
 package com.properties.property.service;
 
+import com.properties.property.dto.ListResponseDTO;
 import com.properties.property.dto.PropertyRequest;
+import com.properties.property.dto.PropertyResponseDTO;
+import com.properties.property.mapper.PropertyMapper;
 import com.properties.property.model.Property;
 import com.properties.property.model.PropertyImage;
 import com.properties.property.model.UserModel;
 import com.properties.property.repository.PropertyRepository;
 import com.properties.property.repository.UserReposiitory;
-import com.properties.property.service.PropertyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class PropertyServiceImpl implements PropertyService {
@@ -50,14 +57,54 @@ public class PropertyServiceImpl implements PropertyService {
                 
         return propertyRepository.save(property);
     }
-    @Override
-    public List<Property> getAllProperties() {
-        return propertyRepository.findAll();
+
+	@Override
+	public ListResponseDTO<PropertyResponseDTO> getAllProperties(int page, int size) {
+		// TODO Auto-generated method stub
+		Pageable pageable = PageRequest.of(page, size);
+        Page<Property> propertyPage = propertyRepository.findAll(pageable);
+
+        List<PropertyResponseDTO> dtoList = propertyPage.getContent()
+                .stream()
+                .map(PropertyMapper::toResponse) // This is from toResponse
+                .collect(Collectors.toList());
+        int currentPage = propertyPage.getNumber() + 1;
+        int pageSize = propertyPage.getSize();
+        int totalPages = propertyPage.getTotalPages();
+        long totalItems = propertyPage.getTotalElements();
+        boolean hasNext = propertyPage.hasNext();
+        boolean hasPrevious = propertyPage.hasPrevious();
+
+        return new ListResponseDTO<>(
+                true,
+                "Properties fetched successfully",
+                dtoList,
+                currentPage,
+                pageSize,
+                totalPages,
+                totalItems,
+                hasNext,
+                hasPrevious
+        );
     }
 
-    @Override
-    public Property getPropertyById(Long id) {
-        return propertyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
-    }
+
+	@Override
+	public PropertyResponseDTO getPropertyById(Long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PropertyResponseDTO updateProperty(Long id, PropertyRequest request, String email) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void deleteProperty(Long id, String email) {
+		// TODO Auto-generated method stub
+		
+	}
+   
 }
