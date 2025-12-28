@@ -1,4 +1,5 @@
 package com.properties.property.service;
+import com.properties.property.dto.ApiResponseWithSuccess;
 import com.properties.property.dto.ListResponseDTO;
 import com.properties.property.dto.PropertyRequest;
 import com.properties.property.dto.PropertyResponseDTO;
@@ -10,6 +11,6 @@ public interface PropertyService {
     PropertyResponseDTO getPropertyById(Long id);
     
     PropertyResponseDTO updateProperty(Long id, PropertyRequest request, String email);
-    void deleteProperty(Long id, String email);
+    ApiResponseWithSuccess deleteProperty(Long id, String email);
 
 }

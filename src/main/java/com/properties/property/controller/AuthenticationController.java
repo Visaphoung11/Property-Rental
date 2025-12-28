@@ -68,7 +68,7 @@ public class AuthenticationController {
             ApiResponse<UserModel> response = authenticationService.assignRoleToUser(request);
             return ResponseEntity.ok(response);
         } catch (Exception ex) {
-            // Return a parameterized ApiResponse even in case of error
+            // Return a parameterized ApiResponseWithSuccess even in case of error
             ApiResponse<UserModel> errorResponse = ApiResponse.<UserModel>builder()
                     .message("Failed: " + ex.getMessage())
                     .statusCode(HttpStatus.BAD_REQUEST.value())

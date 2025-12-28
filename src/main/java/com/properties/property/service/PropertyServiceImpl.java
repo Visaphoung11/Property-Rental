@@ -1,8 +1,11 @@
 package com.properties.property.service;
 
+import com.properties.property.dto.ApiResponseWithSuccess;
 import com.properties.property.dto.ListResponseDTO;
 import com.properties.property.dto.PropertyRequest;
 import com.properties.property.dto.PropertyResponseDTO;
+import com.properties.property.exception.ForbiddenOperationException;
+import com.properties.property.exception.ResourceNotFoundException;
 import com.properties.property.mapper.PropertyMapper;
 import com.properties.property.model.Property;
 import com.properties.property.model.PropertyImage;
@@ -14,8 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -92,19 +97,56 @@ public class PropertyServiceImpl implements PropertyService {
 	@Override
 	public PropertyResponseDTO getPropertyById(Long id) {
 		// TODO Auto-generated method stub
-		return null;
+		// Logic to find property by id
+		Property property = propertyRepository.findById(id)
+				.orElseThrow(()-> new ResourceNotFoundException("Property not found with this id "+ id));
+		return PropertyMapper.toResponse(property);
 	}
 
 	@Override
 	public PropertyResponseDTO updateProperty(Long id, PropertyRequest request, String email) {
 		// TODO Auto-generated method stub
-		return null;
+		
+		Property property = propertyRepository.findById(id)
+				.orElseThrow(()-> new ResourceNotFoundException("Property not found with this id "+ id));
+              if(!property.getAgent().getEmail().equals(email)) {
+            	  throw new RuntimeException("You are not allowed to update this property");
+              }
+              property.setTitle(request.getTitle());
+              property.setDescription(request.getDescription());
+              property.setPrice(request.getPrice());
+              property.setLocation(request.getLocation());
+              
+              property.getImages().clear();// orphanRemoval = true → old images deleted
+              request.getImageUrls().forEach(url ->
+                  property.getImages().add(
+                      PropertyImage.builder()
+                          .imageUrl(url)
+                          .property(property)
+                          .build()
+                  )
+            		  );
+              
+              Property updated = propertyRepository.save(property);
+              return PropertyMapper.toResponse(updated);
 	}
 
+	
 	@Override
-	public void deleteProperty(Long id, String email) {
+	@Transactional
+	public ApiResponseWithSuccess deleteProperty(Long id, String email) {
 		// TODO Auto-generated method stub
 		
+		Property property = propertyRepository.findById(id)
+				.orElseThrow(()-> new ResourceNotFoundException("Property not found with this id "+ id));
+              if (!property.getAgent().getEmail().equals(email)) {
+            	  
+            	  throw new ForbiddenOperationException("You are not allowed to delete this property");
+              }
+		propertyRepository.deleteById(id);
+		
+		// return deleted ID
+		return new ApiResponseWithSuccess(true, "Property deleted successfully", Map.of("id", id));
 	}
    
 }

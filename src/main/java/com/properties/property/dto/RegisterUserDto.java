@@ -14,4 +14,5 @@ public class RegisterUserDto {
     private String contactNumber;
     private String role;
     private String password;
+//    private String gender;
 }
