@@ -45,6 +45,7 @@ public class AuthenticationService {
                 .fullName(registerDto.getName())
                 .email(registerDto.getEmail())
                 .password(passwordEncoder.encode(registerDto.getPassword()))
+                .gender(registerDto.getGender())
                 .phone(registerDto.getContactNumber())
                 .status("ACTIVE")
                 .roles(new HashSet<>()) 

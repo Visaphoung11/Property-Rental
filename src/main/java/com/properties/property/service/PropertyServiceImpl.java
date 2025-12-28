@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 @Transactional
@@ -92,9 +93,46 @@ public class PropertyServiceImpl implements PropertyService {
                 hasPrevious
         );
     }
+    @Override
+    public ListResponseDTO<PropertyResponseDTO> getPropertiesByAgent(String email, int page, int size) {
+
+        // Get agent directly
+        UserModel agent = userReposiitory.findByEmail(email);
+
+        // Check if null
+        if (agent == null) {
+            throw new ResourceNotFoundException("Agent not found");
+        }
+
+        // Prepare pageable
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
+        // Get paginated properties for this agent
+        Page<Property> propertyPage = propertyRepository.findByAgentId(agent.getId(), pageable);
+
+        // Map to DTO
+        List<PropertyResponseDTO> dtoList = propertyPage.getContent()
+                .stream()
+                .map(PropertyMapper::toResponse)
+                .collect(Collectors.toList());
+
+        // Return paginated response
+        return new ListResponseDTO<>(
+                true,
+                "Agent properties fetched successfully",
+                dtoList,
+                propertyPage.getNumber() + 1, // current page (1-based)
+                propertyPage.getSize(),
+                propertyPage.getTotalPages(),
+                propertyPage.getTotalElements(),
+                propertyPage.hasNext(),
+                propertyPage.hasPrevious()
+        );
+    }
 
 
-	@Override
+
+    @Override
 	public PropertyResponseDTO getPropertyById(Long id) {
 		// TODO Auto-generated method stub
 		// Logic to find property by id
