@@ -1,0 +1,17 @@
+package com.properties.property.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class ReviewResponseDTO {
+    private Long reviewId;
+    private int rating;
+    private String initialComment;
+    private LocalDateTime createdAt;
+    private Long userId;
+    private String fullName;
+}
