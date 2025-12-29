@@ -5,6 +5,7 @@ import com.properties.property.dto.UserDTO;
 import com.properties.property.model.Comment;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class CommentMapper {
@@ -19,11 +20,14 @@ public class CommentMapper {
                 .commentText(comment.getCommentText())
                 .createdAt(comment.getCreatedAt())
                 .user(new UserDTO(comment.getUser().getId(), comment.getUser().getFullName()))
-                .replies(comment.getReplies() != null
-                        ? comment.getReplies().stream()
-                        .map(CommentMapper::toDTO)
-                        .collect(Collectors.toList())
-                        : new ArrayList<>())
+                .replies(
+                        comment.getReplies() == null
+                                ? List.of()
+                                : comment.getReplies().stream()
+                                .map(CommentMapper::toDTO)
+                                .toList()
+                )
+
                 .build();
     }
 
