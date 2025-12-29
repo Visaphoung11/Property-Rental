@@ -2,6 +2,7 @@ package com.properties.property.service;
 
 import com.properties.property.dto.CommentDTO;
 import com.properties.property.dto.CreateReviewRequestDTO;
+import com.properties.property.dto.PaginatedResponse;
 import com.properties.property.dto.ReviewResponseDTO;
 import com.properties.property.exception.ResourceNotFoundException;
 import com.properties.property.mapper.CommentMapper;
@@ -13,6 +14,10 @@ import com.properties.property.repository.PropertyRepository;
 import com.properties.property.repository.ReviewRepository;
 import com.properties.property.repository.UserReposiitory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -64,12 +69,12 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public List<ReviewResponseDTO> getReviewsByProperty(Long propertyId) {
+    public PaginatedResponse<ReviewResponseDTO> getReviewsByProperty(Long propertyId, int page, int size) {
 
-        List<Review> reviews = reviewRepository.findByPropertyId(propertyId);
-        return reviews.stream().map(review -> {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Review> reviewPage = reviewRepository.findByPropertyId(propertyId, pageable);
 
-            // Only top-level comments
+        List<ReviewResponseDTO> reviews = reviewPage.getContent().stream().map(review -> {
             List<CommentDTO> comments = commentRepository
                     .findByReviewIdAndParentCommentIsNull(review.getId())
                     .stream()
@@ -85,7 +90,18 @@ public class ReviewServiceImpl implements ReviewService {
                     .fullName(review.getUser().getFullName())
                     .comments(comments)
                     .build();
-
         }).toList();
+
+        return PaginatedResponse.<ReviewResponseDTO>builder()
+                .content(reviews)
+                .page(reviewPage.getNumber())
+                .size(reviewPage.getSize())
+                .totalElements(reviewPage.getTotalElements())
+                .totalPages(reviewPage.getTotalPages())
+                .last(reviewPage.isLast())
+                .build();
     }
 }
+
+
+

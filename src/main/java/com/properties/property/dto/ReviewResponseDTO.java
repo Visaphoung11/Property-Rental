@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+
 import java.util.List;
 
 @Data
@@ -17,5 +17,4 @@ public class ReviewResponseDTO {
     private Long userId;
     private String fullName;
     private List<CommentDTO> comments;
-
 }
