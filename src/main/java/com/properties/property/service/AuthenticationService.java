@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.properties.property.apiResponse.ApiResponse;
 import com.properties.property.dto.AuthenticationRequest;
+import com.properties.property.dto.AuthenticationResponse;
 import com.properties.property.dto.RegisterUserDto;
 import com.properties.property.dto.RoleAssignmentRequest;
 import com.properties.property.enums.enums; 
@@ -46,7 +47,7 @@ public class AuthenticationService {
                 .email(registerDto.getEmail())
                 .password(passwordEncoder.encode(registerDto.getPassword()))
                 .gender(registerDto.getGender())
-                .phone(registerDto.getContactNumber())
+                .contactNumber(registerDto.getContactNumber())
                 .status("ACTIVE")
                 .roles(new HashSet<>()) 
                 .build();
@@ -99,29 +100,42 @@ public class AuthenticationService {
                 .build();
     }
     
-    public ApiResponse<UserModel> authenticate(AuthenticationRequest authenticationRequest) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                authenticationRequest.getEmail(),
-                authenticationRequest.getPassword()));
+    public ApiResponse<AuthenticationResponse> authenticate(
+            AuthenticationRequest authenticationRequest) {
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        authenticationRequest.getEmail(),
+                        authenticationRequest.getPassword()
+                )
+        );
 
         UserModel user = userReposiitory.findByEmail(authenticationRequest.getEmail());
         if (user == null) {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
+        String jwtToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
 
         String rolesString = user.getRoles().stream()
-                .map((Role r) -> r.getName().name()) 
+                .map(r -> r.getName().name())
                 .collect(Collectors.joining(","));
 
-        return ApiResponse.<UserModel>builder()
-                .statusCode(HttpStatus.OK.value())
+        AuthenticationResponse response = AuthenticationResponse.builder()
+                .userId(user.getId())
+                .gender(user.getGender())
+                .contactNumber(user.getContactNumber())
+                .role(rolesString)
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
-                .role(rolesString) 
-                .userId(user.getId())
+                .build();
+
+        return ApiResponse.<AuthenticationResponse>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Login successfully")
+                .data(response)
                 .build();
     }
+
 }

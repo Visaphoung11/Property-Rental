@@ -30,7 +30,9 @@ public class ApiResponse<T> {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("accessToken")
     private String accessToken;
-
+    
+    private T data;
+    
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("ListData")
     private List<T> listData;
